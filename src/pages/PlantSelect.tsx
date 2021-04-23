@@ -9,6 +9,8 @@ import api from '../services/api'
 import { PlantCardPrimary } from '../components/PlantCardPrimary'
 
 import { Load } from '../components/load'
+import { useNavigation } from '@react-navigation/core'
+import { PlantProps } from '../libs/storage'
 
 
 
@@ -17,18 +19,6 @@ interface EnviromentsProps {
     title: string,
 }
 
-interface PlantProps {
-    id: string,
-    name: string,
-    about: string,
-    water_tips: string,
-    photo: string,
-    environments: [string],
-    frequency: {
-        times: number,
-        repeat_every: string
-    },
-}
 
 
 export function PlantSelect() {
@@ -40,7 +30,8 @@ export function PlantSelect() {
     const [loading, setLoading] = useState(true)
     const [page, setPage] = useState(1)
     const [loadingMore, setLoadingMore] = useState(false)
-    const [loadedAll, setLoadedAll] = useState(false)
+
+    const navigation = useNavigation()
 
     async function fetchPlants() {
         const { data } = await api.get(`plants?_sort=name&_order=asc&_page=${page}&_limit=8`)
@@ -84,7 +75,9 @@ export function PlantSelect() {
         fetchPlants()
     }
 
-
+    function handlePlantSelect(plant: PlantProps){
+        navigation.navigate('PlantSave',{ plant })
+    }
 
     useEffect(() => {
         async function fetchEnviroment() {
@@ -124,6 +117,7 @@ export function PlantSelect() {
             <View>
                 <FlatList
                     data={enviroments}
+                    keyExtractor={(item) => String(item.key)}
                     renderItem={({ item }) => (
                         <EnviromentoButton
                             title={item.title}
@@ -141,9 +135,11 @@ export function PlantSelect() {
                 <FlatList 
                 
                 data={filteredPlants}
+                keyExtractor={(item) => String(item.id)}
                 renderItem={({ item }) => (
                     <PlantCardPrimary 
                         data = { item }
+                        onPress={() => handlePlantSelect(item)}
                     />
                 )}
                 showsVerticalScrollIndicator={false}
