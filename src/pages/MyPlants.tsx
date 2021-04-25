@@ -1,24 +1,50 @@
 import React, { useEffect, useState } from 'react'
-import { StyleSheet, View, Text, Image} from 'react-native'
+import { StyleSheet, View, Text, Image, Alert } from 'react-native'
 import { Header } from '../components/Header'
 import colors from '../styles/colors'
 import waterdrop from '../assets/waterdrop.png'
-import { PlantProps, LoadPlant } from '../libs/storage'
+import { PlantProps, LoadPlant, removePlant } from '../libs/storage'
 import { formatDistance } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import { FlatList } from 'react-native-gesture-handler'
 import fonts from '../styles/fonts'
 import { PlantCardSecundary } from '../components/PlantCardSecundary'
 import { PlantCardPrimary } from '../components/PlantCardPrimary'
+import { Load } from '../components/load'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
-export function MyPlants(){
+export function MyPlants() {
 
-    const [myPlants, setMyPlants] =useState<PlantProps[]>([])
+    const [myPlants, setMyPlants] = useState<PlantProps[]>([])
     const [loading, setLoading] = useState(true)
     const [nextWatered, setNextWatered] = useState<string>()
 
+    function handleRemove(plant: PlantProps) {
+        Alert.alert('Remover', `Deseja remover a ${plant.name}?`, [
+            {
+                text: 'Não 🙏',
+                style: 'cancel'
+            },
+            {
+                text: 'Sim 😥',
+                onPress: async () => {
+                    try {
+                        
+                        await removePlant(plant.id)
+
+                        setMyPlants((oldData) => (
+                            oldData.filter((item) => item.id !== plant.id)  
+                            ))
+                  } catch (error) {
+                        Alert.alert('Não foi possivel remover!  😥')
+                    }
+                }
+            }
+        ])
+    }
+
     useEffect(() => {
-        async function loadStoregedData(){
+        async function loadStoregedData() {
 
             const plantsStoraged = await LoadPlant()
 
@@ -32,8 +58,8 @@ export function MyPlants(){
                 `Não esqueça de regar a ${plantsStoraged[0].name} em aproximandamente ${nextTime}`
             )
 
-                setMyPlants(plantsStoraged)
-                setLoading(false)
+            setMyPlants(plantsStoraged)
+            setLoading(false)
 
         }
 
@@ -41,15 +67,16 @@ export function MyPlants(){
 
     })
 
+    if (loading)
+        return <Load />
 
-
-    return(
+    return (
         <View style={styles.container}>
-            <Header />  
+            <Header />
             <View style={styles.spotLight}>
-                <Image  
-                source={waterdrop}
-                style={styles.spotLightImage}
+                <Image
+                    source={waterdrop}
+                    style={styles.spotLightImage}
                 />
                 <Text style={styles.spotLightText}>
                     {nextWatered}
@@ -61,25 +88,18 @@ export function MyPlants(){
                     Próximas regadas
                 </Text>
 
-                <FlatList 
+                <FlatList
                     data={myPlants}
-                    keyExtractor={(item) => String(item.id)}
+                    keyExtractor={item => String(item.id)}
                     renderItem={({ item }) => (
-                        <Text>
-                            <PlantCardSecundary
-                            
-                            data={item}
-
-                            />
-                        </Text>
+                        <PlantCardSecundary
+                            handleRemove={() => handleRemove(item)}
+                            data={item} />
                     )}
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{flex: 1}}
+                // contentContainerStyle={{ flex: 1 }}
                 />
-
             </View>
-
-
         </View>
     )
 }
@@ -91,7 +111,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 30,
-        paddingTop: 50,
+        //paddingTop: 50,
         backgroundColor: colors.background,
     },
 
@@ -123,7 +143,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
 
-    plantsTitle:{
+    plantsTitle: {
         fontSize: 24,
         fontFamily: fonts.heading,
         color: colors.heading,
